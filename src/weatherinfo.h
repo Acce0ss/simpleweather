@@ -58,9 +58,13 @@ public slots:
     bool queryWith(QString query, QueryType type);
     bool refreshCurrentWeather();
 
-    void addCity(QString name, int id);
+    void addCityBack(QString name, int id);
+    void addCityFront(QString name, int id);
     void removeCity(QString name);
     void swapCities(QString toSwap, QString target);
+    void resetForecastLoadtimes();
+
+    bool repeatLastQuery();
 
     void setLocationFromSearchList(QString name);
     void clearSearchlist();

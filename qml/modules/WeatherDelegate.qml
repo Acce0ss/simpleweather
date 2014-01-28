@@ -6,11 +6,11 @@ ListItem {
 
     id: root
 
+    property QtObject cityData
+
     ListView.onRemove: animateRemoval(listItem)
 
     property bool selected: false
-
-
 
     Rectangle {
         anchors.fill: parent
@@ -19,37 +19,11 @@ ListItem {
         radius: Theme.paddingLarge
     }
 
-    menu: Component {
-        id: contextMenu
-        ContextMenu {
-            MenuItem {
-                text: qsTr("Remove")
-                onClicked: remove(index);
-            }
-            MenuItem {
-                text: qsTr("Swap places with a city")
-                enabled: settings.allCities.length > 1
+    menu: CityEditMenu {}
 
-                Label {
-                    visible: !parent.enabled
-                    anchors.bottom: parent.bottom
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: qsTr("Add more cities to use")
-                    font.pixelSize: Theme.fontSizeTiny
-                    color: Theme.secondaryColor
-                }
+    hoverEnabled: false
 
-                onClicked: {
-
-                    page.swapModeOn = !page.swapModeOn;
-                    page.swapIndex = index;
-                    page.targetIndex = -1;
-
-                    selected = true;
-                }
-            }
-        }
-    }
+    _showPress: false
 
     onClicked: {
         if(page.swapModeOn)
@@ -80,13 +54,12 @@ ListItem {
         }
     }
 
+
     function remove(idx){
         remorseAction(qsTr("Removing"), function (){
             settings.permRemoveCity(idx);
         });
     }
-
-    property QtObject cityData
 
     function updateTime()
     {
@@ -94,20 +67,20 @@ ListItem {
     }
 
     Column {
+        id: content
 
         anchors.fill: parent
 
         spacing: Theme.paddingSmall
 
+
         WeatherDisplay {
             id: coverther
 
             width: parent.width-2*Theme.paddingMedium
-            height: parent.height-detailsButton.height
+            height:  parent.height-detailsButton.height-forecastButton.height
 
             anchors.horizontalCenter: parent.horizontalCenter
-
-
 
             forecast: root.cityData.currentWeather
 
@@ -121,10 +94,31 @@ ListItem {
 
         Button {
 
+            id: forecastButton
+            height: parent.height/6
+
+            visible: !root.menuOpen && settings.forecastOn
+
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("Forecast")
+            onClicked:
+            {
+
+                weather.loadForecast();
+
+                pageStack.push(Qt.resolvedUrl("../pages/ForecastPage.qml"),
+                                       {city: root.cityData, currentSettings: settings,
+                               minuter: minutesTimer});
+            }
+
+        }
+
+        Button {
+
             id: detailsButton
             height: parent.height/6
 
-            visible: root.menuOpen
+            visible: !root.menuOpen
 
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("Weather details")
@@ -136,5 +130,8 @@ ListItem {
             }
 
         }
+
+
     }
+
 }

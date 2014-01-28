@@ -27,8 +27,9 @@ Column {
     property date time: forecast ? new Date((new Date().getTime() - forecast.dateTime.getTime())) : undefined
 
     property string timePassed: forecast ?
-                                    qsTr("Measured %1%2%3 ago").arg(time.getUTCHours() > 0 ? time.getUTCHours() + " h " : "")
-                                        .arg(time.getUTCMinutes() > 0 ? time.getUTCMinutes() + " min" : "")
+                                    qsTr("Measured %1%2%3").arg(time.getUTCHours() > 0 ? time.getUTCHours() + " h " : "")
+                                        .arg(time.getUTCMinutes() === 0  && time.getUTCHours() === 0
+                                             ? qsTr("just now"): time.getUTCMinutes() + " min ago")
                                            .arg("")
                                          : ""
 

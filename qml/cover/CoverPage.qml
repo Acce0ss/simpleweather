@@ -16,6 +16,8 @@ CoverBackground {
         }
     }
 
+    property QtObject currentCityObject: weather.getCity(settings.currentCity)
+
     CoverWeatherDisplay {
         id: coverWeather
         anchors.top: parent.top
@@ -24,16 +26,40 @@ CoverBackground {
         width: parent.width-Theme.paddingSmall
         height: parent.height*4/5
 
-        forecast: settings.currentCity === "" ? null : weather.getCity(settings.currentCity).currentWeather
+        forecast: root.currentCityObject ? root.currentCityObject.currentWeather : null
         currentSettings: settings
 
-        name: settings.currentCity === "" ? "" : weather.getCity(settings.currentCity).name
+        name: root.currentCityObject ? root.currentCityObject.name : ""
         isCover: true
-        visible: !weather.downloading || settings.allCities.length === 0
+        visible: !weather.downloading && settings.allCities.length !== 0 && settings.coverType !== "BrowseForecast"
         z:1
 
 
     }
+
+//    CoverForecastDisplay {
+//        id: forecastWeather
+//        anchors.top: parent.top
+//        anchors.horizontalCenter: parent.horizontalCenter
+
+//        width: parent.width-Theme.paddingSmall
+//        height: parent.height*4/5
+
+//        forecast: settings.currentCity === "" ? null :
+//                                                settings.coverType === "BrowseForecast" ?
+//                                                    weather.getCity(settings.currentCity).forecastModel[coverIndex]
+//                                                        : null
+//        currentSettings: settings
+
+//        name: settings.currentCity === "" ? "" : weather.getCity(settings.currentCity).name
+//        isCover: true
+//        visible: !weather.downloading && settings.allCities.length !== 0 && settings.coverType === "BrowseForecast"
+//        z:1
+
+
+//    }
+
+
 
     CoverPlaceholder {
         text: qsTr("Add a city")

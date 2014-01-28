@@ -8,6 +8,9 @@ import "pages"
 import "cover"
 import "modules"
 
+// NOTE! Loading of initialpage is done in SimpleWeatherSettings,
+// because it depends on the settings what page will be loaded.
+
 ApplicationWindow
 {
 
@@ -15,14 +18,16 @@ ApplicationWindow
 
     property Page weatherPage
 
-    ForecastPage {
-        id: forecastPage
-    }
+    property Page summaryPage
 
     SimpleWeatherSettings {
         id: settings
 
         weather: weather
+    }
+
+    SimpleWeatherInfo {
+        id: weather
     }
 
     Timer {
@@ -56,96 +61,48 @@ ApplicationWindow
 
     }
 
-    WeatherInfo {
-
-        id: weather
-        property bool downloading: false
-        property bool locationSet: settings.currentCity !== ""
-        property bool lastLoadSuccess: false
-        property int lastLoadFailCount: 0
-        property int lastLoadTime: new Date().getTime() / 1000 - 10*60
-        property bool initialized: false
-
-        onDataReady: {
-            weather.downloading = false;
-            weather.lastLoadSuccess = isSuccess;
-            if(!isSuccess)
-            {
-                weather.lastLoadFailCount = weather.lastLoadFailCount + 1;
-                if(weather.lastLoadFailCount >= 5 || weather.isSearch)
-                {
-                    if(!isServiceError)
-                    {
-                        showError(qsTr("Network error"), true);
-                    }
-                    else
-                    {
-                        showError(qsTr("Openweathermap.org temporarily unavailable"), true);
-                    }
-
-                }
-
-            }else
-            {
-
-                weather.lastLoadFailCount = 0;
-
-                weather.lastLoadTime = new Date().getTime() /1000;
-
-                if(settings.newCityAdded)
-                {
-                    var tmp = [];
-                    tmp = settings.allCities;
-                    var idTmp = [];
-                    idTmp = settings.cityIds;
-
-                    idTmp.push(weather.getCity(tmp[tmp.length-1]).cityId);
-
-                    settings.cityIds = idTmp;
-
-                    settings.newCityAdded = false;
-                    var city = settings.currentCity;
-                    settings.currentCity = "placehold";
-                    settings.currentCity = city;
-                }
-
-            }
 
 
+    property bool returnedFromSettings: false
 
+    property string pageWhereStarted
+    property int depthWhenStarted
+    property bool operationWasPop
+
+    property bool useSummaryMode
+
+    pageStack.onBusyChanged: {
+
+        if(pageStack.busy)
+        {
+//            console.log("busy: " + pageStack.currentPage.objectName + "depth: " + pageStack.depth);
+            app.pageWhereStarted = pageStack.currentPage.objectName;
+            app.depthWhenStarted = pageStack.depth;
         }
+        else
+        {
+          //  console.log("not busy: " + pageStack.currentPage.objectName + "depth: " + pageStack.depth);
+            app.operationWasPop = app.depthWhenStarted > pageStack.depth;
 
-        function refresh() {
-
-            if(((weather.lastLoadTime + 10*60)*1000 <= new Date().getTime() && !weather.downloading)
-                    || !weather.lastLoadSuccess){
-                if(weather.locationSet)
-                {
-                    weather.downloading = weather.refreshCurrentWeather();
-                }
-                else
-                {
-                    showError(qsTr("Set location first by searching!"), false);
-                }
-
-            }
-            else
+            if(app.pageWhereStarted === "SettingPage" && app.operationWasPop)
             {
-                showError(qsTr("Already refreshed within 10 minutes or still downloading"), true);
-            }
-        }
-
-        onCitiesModelChanged: {
-            if(app.weatherPage)
-            {
-                app.weatherPage.updateCityPagerFromCover();
+                if(settings.summaryChangedRecently)
+                {
+                    settings.summaryChangedRecently = false;
+                    app.useSummaryMode = settings.summaryOn;
+                }
             }
         }
 
     }
 
-    initialPage: Component {
+    onUseSummaryModeChanged: {
 
+        app.resetPageStack();
+    }
+
+    Component {
+        id: weatherPageComponent
         WeatherPage {
             id: weatherPage
 
@@ -153,6 +110,16 @@ ApplicationWindow
         }
     }
 
+    Component {
+        id: summaryPageComponent
+        SummaryPage {
+            id: summaryPage
+
+            Component.onCompleted: app.summaryPage = summaryPage;
+
+            currentSettings: settings
+        }
+    }
     cover: Component {
 
         id: coverPage
@@ -190,13 +157,14 @@ ApplicationWindow
         }
     }
 
+
+
     onApplicationActiveChanged: {
-        if(Qt.application.active)
+        if(Qt.application.active && app.weatherPage)
         {
             app.weatherPage.updateCityPagerFromCover();
         }
     }
-
 
     Component.onDestruction: {
         settings.storeSettings();
@@ -204,7 +172,7 @@ ApplicationWindow
 
     function showError(message, showTryAgain) {
 
-        if(pageStack.currentPage.objectName !== "MessagePage")
+        if(pageStack.currentPage ? pageStack.currentPage.objectName !== "MessagePage" : false)
         {
             pageStack.push(Qt.resolvedUrl("pages/MessagePage.qml"));
             pageStack.currentPage.message = message;
@@ -216,6 +184,22 @@ ApplicationWindow
     {
         pageStack.push(searchPageComponent);
         app.activate();
+    }
+
+    function resetPageStack()
+    {
+        pageStack.clear();
+
+        if(app.useSummaryMode)
+        {
+            pageStack.push(summaryPageComponent, {}, PageStackAction.Immediate);
+            pageStack.pushAttached(weatherPageComponent);
+
+        }
+        else
+        {
+            pageStack.push(weatherPageComponent, {}, PageStackAction.Immediate);
+        }
     }
 }
 

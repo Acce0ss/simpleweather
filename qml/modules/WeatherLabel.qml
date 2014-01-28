@@ -7,6 +7,7 @@ Item {
 
     property alias text: label.text
     property int fontSize: Theme.fontSizeMedium
+    property alias color: label.color
 
     Label {
         id: label

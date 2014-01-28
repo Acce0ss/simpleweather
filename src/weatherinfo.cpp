@@ -31,7 +31,6 @@ void WeatherInfo::setQuery(QString query)
 
     if (query != this->m_query) {
         this->m_query = query;
-        buildUrl();
         emit queryChanged();
     }
 }
@@ -128,15 +127,24 @@ bool WeatherInfo::queryWith(QString query, QueryType type)
 {
     this->_type = type;
     this->setQuery(query);
+
+    buildUrl();
+
     return downloadData();
 }
 
 bool WeatherInfo::refreshCurrentWeather()
 {
     QString query = "";
+    CityWeather* temp;
     foreach (QObject* city, this->_cities) {
-        query.append(QString::number(dynamic_cast<CityWeather*>(city)->cityId())).append(",");
+        temp = dynamic_cast<CityWeather*>(city);
+        if(temp->city() != "Summary")
+        {
+            query.append(QString::number(temp->cityId())).append(",");
+        }
     }
+
     if(query != "")
     {
         query.remove(query.length() - 1, 1);
@@ -148,7 +156,7 @@ bool WeatherInfo::refreshCurrentWeather()
     }
 }
 
-void WeatherInfo::addCity(QString name, int id)
+void WeatherInfo::addCityBack(QString name, int id)
 {
     CityWeather* city = new CityWeather(this);
     this->_cities.append( dynamic_cast<QObject*>(city) );
@@ -156,6 +164,26 @@ void WeatherInfo::addCity(QString name, int id)
     city->setCity(name);
     city->setCityId(id);
     city->setDetailsUrl(id);
+    this->_city_indexes[name] = index;
+    emit citiesModelChanged();
+
+}
+
+void WeatherInfo::addCityFront(QString name, int id)
+{
+    CityWeather* city = new CityWeather(this);
+
+    city->setCity(name);
+    city->setCityId(id);
+    city->setDetailsUrl(id);
+    this->_cities.prepend( dynamic_cast<QObject*>(city) );
+    int index = _cities.indexOf(dynamic_cast<QObject*>(city));
+    QHashIterator<QString, int> i(_city_indexes);
+    while (i.hasNext()) {
+        i.next();
+        _city_indexes[i.key()] += 1;
+    }
+
     this->_city_indexes[name] = index;
     emit citiesModelChanged();
 
@@ -198,6 +226,20 @@ void WeatherInfo::swapCities(QString toSwap, QString target)
 
     emit citiesModelChanged();
 
+}
+
+void WeatherInfo::resetForecastLoadtimes()
+{
+    for(int i = 0; i < _cities.size(); i++)
+    {
+        dynamic_cast<CityWeather*>(_cities.at(i))->setForecastLoadtime(QDateTime::fromTime_t(0));
+    }
+
+}
+
+bool WeatherInfo::repeatLastQuery()
+{
+    return this->downloadData();
 }
 
 void WeatherInfo::setLocationFromSearchList(QString name)
@@ -280,7 +322,7 @@ void WeatherInfo::httpFinished()
     else if(isSuccess)
     {
         QJsonDocument jDoc = QJsonDocument::fromJson(m_latestData.toLocal8Bit());
-        qDebug() << jDoc.object().toVariantMap();
+        //qDebug() << jDoc.object().toVariantMap();
         parseData(jDoc);
     }
 
@@ -313,12 +355,16 @@ void WeatherInfo::parseCities(QString data)
 
 void WeatherInfo::parseForecast(QJsonObject info)
 {
-    QString city = info["name"].toString();
-    QString country = info["country"].toString();
+
+    QJsonObject cityObject = info["city"].toObject();
+    QString city = cityObject["name"].toString();
+    QString country = cityObject["country"].toString();
 
     city = city.append(", ").append(country);
 
-    int cityId = (int)info["id"].toDouble();
+    int cityId = (int)cityObject["id"].toDouble();
+
+    qDebug() << city << _city_indexes;
 
     CityWeather* temp_city;
 
@@ -329,6 +375,7 @@ void WeatherInfo::parseForecast(QJsonObject info)
     }
     else
     {
+        qDebug() << "luodahtaanko uusi kaupunki?";
         temp_city = new CityWeather(this);
         this->_cities.append( dynamic_cast<QObject*>(temp_city));
         this->_city_indexes[city] = _cities.indexOf(dynamic_cast<QObject*>(temp_city));
@@ -338,9 +385,11 @@ void WeatherInfo::parseForecast(QJsonObject info)
         emit citiesModelChanged();
     }
 
-    //qDebug() << temp_city->city();
+    temp_city->setForecastLoadtime(QDateTime::currentDateTime());
 
     QJsonArray days = info["list"].toArray();
+
+//    qDebug() << days.toVariantList();
 
     for(int i = 0; i < days.size(); i++)
     {
@@ -348,11 +397,11 @@ void WeatherInfo::parseForecast(QJsonObject info)
 
         QJsonObject weather = days[i].toObject();
         QJsonObject temp_info = weather["temp"].toObject();
-        QString temp = QString::number(temp_info["min"].toDouble()).append(" / ")
-                .append(QString::number(temp_info["max"].toDouble()));
+        QString min_temp = QString::number(temp_info["min"].toDouble());
+        QString max_temp = QString::number(temp_info["max"].toDouble());
         QString humidity = QString::number((int)weather["humidity"].toDouble());
 
-        QJsonObject cond = info["weather"].toArray().first().toObject();
+        QJsonObject cond = weather["weather"].toArray().first().toObject();
         QString condition = cond["description"].toString();
         QString icon = QString("http://openweathermap.org/img/w/")
                 .append(cond["icon"].toString()).append(".png");
@@ -366,16 +415,18 @@ void WeatherInfo::parseForecast(QJsonObject info)
 
         temp_forecast->setIcon(icon);
         temp_forecast->setWind(windSpeed);
-        temp_forecast->setTemperature(temp);
+        temp_forecast->setMinimumTemperature(min_temp);
+        temp_forecast->setMaximumTemperature(max_temp);
         temp_forecast->setHumidity(humidity);
         temp_forecast->setCondition(condition);
         temp_forecast->setGust(gust);
         temp_forecast->setWindDirection(this->degToDirection((int)weather["deg"].toDouble()));
         temp_forecast->setDate(QDateTime::fromTime_t((uint)weather["dt"].toDouble()));
 
-      //  qDebug() << temp_forecast->condition();
+        qDebug() << temp_forecast->condition();
 
         temp_city->pushForecastDay(temp_forecast);
+
 
     }
 
@@ -433,9 +484,9 @@ void WeatherInfo::parseSearch(QJsonObject info)
         gust = QString::number(wind["gust"].toDouble());
     }
 
-    qDebug() << temp;
-    qDebug() << humidity;
-    qDebug() << weather.toVariantMap();
+   // qDebug() << temp;
+   // qDebug() << humidity;
+   // qDebug() << weather.toVariantMap();
 
     current->setIcon(icon);
     current->setWind(windSpeed);
@@ -446,8 +497,8 @@ void WeatherInfo::parseSearch(QJsonObject info)
     current->setDate(QDateTime::fromTime_t((uint)info["dt"].toDouble()));
     current->setWindDirection(this->degToDirection((int)weather["deg"].toDouble()));
 
-    qDebug() << current->temperature();
-    qDebug() << current->condition();
+   // qDebug() << current->temperature();
+   // qDebug() << current->condition();
 
 //    qDebug() << temp_city->city();
 
@@ -518,12 +569,12 @@ void WeatherInfo::parseCurrentWeather(QJsonObject info)
         current->setDate(QDateTime::fromTime_t((uint)city["dt"].toDouble()));
         current->setWindDirection(this->degToDirection((int)weather["deg"].toDouble()));
 
-        qDebug() << temp;
-        qDebug() << humidity;
-        qDebug() << weather.toVariantMap();
+     //   qDebug() << temp;
+     //   qDebug() << humidity;
+     //   qDebug() << weather.toVariantMap();
 
-        qDebug() << current->temperature();
-        qDebug() << current->condition();
+//        qDebug() << current->temperature();
+  //      qDebug() << current->condition();
 
     }
 }
@@ -593,7 +644,7 @@ void WeatherInfo::parseData(QJsonDocument jDoc)
         break;
     case WeatherInfo::CurrentForecast:
 
-        info = jDoc.object()["city"].toObject();
+        info = jDoc.object();
         this->parseForecast(info);
 
         break;
@@ -629,8 +680,8 @@ void WeatherInfo::buildUrl()
     QString searchType = "";
     QString langCode = QLocale::system().name().toLower().left(2);
 
-    qDebug() << langCode;
-    qDebug() << QLocale::system().name();
+    //qDebug() << langCode;
+    //qDebug() << QLocale::system().name();
 
     switch (this->_type) {
     case WeatherInfo::CurrentWeather:

@@ -26,18 +26,21 @@ OTHER_FILES += qml/harbour-simpleweather.qml \
     qml/pages/MessagePage.qml \
     qml/pages/DetailsWebPage.qml \
     qml/pages/SettingPage.qml \
-    qml/modules/PagerVIndicator.qml \
     qml/modules/PagerHIndicator.qml \
     qml/modules/Pager.qml \
     qml/modules/WeatherDelegate.qml \
     qml/modules/ForecastDelegate.qml \
     qml/pages/ForecastPage.qml \
     qml/modules/WeatherLabel.qml \
-    qml/pages/ManagementPage.qml \
-    qml/modules/CityDelegate.qml \
     qml/pages/ChooseDialog.qml \
     qml/modules/SimpleWeatherSettings.qml \
-    qml/cover/CoverWeatherDisplay.qml
+    qml/cover/CoverWeatherDisplay.qml \
+    qml/modules/SummaryDelegate.qml \
+    qml/pages/SummaryPage.qml \
+    qml/modules/MainMenu.qml \
+    qml/modules/CityEditMenu.qml \
+    qml/cover/CoverForecastDisplay.qml \
+    qml/modules/SimpleWeatherInfo.qml
 
 HEADERS += \
     src/weatherinfo.h \

@@ -5,6 +5,8 @@ import harbour.simpleweather.WeatherInfo 1.0
 Dialog {
     id: page
 
+    objectName: "SettingPage"
+
     property Settings currentSettings
     property bool previousLoaded: false
 
@@ -95,7 +97,7 @@ Dialog {
             }
 
             ValueButton {
-                label: qsTr("Weatherinfomartion shown")
+                label: qsTr("Weather infomartion shown")
                 value: qsTr("Not implemented yet")
                 enabled: false
                 visible: enabled
@@ -262,14 +264,14 @@ Dialog {
                         }
                     }
                     MenuItem {
-                        enabled: forecastOn.checked
+                        enabled: forecastOn.checked && false
                         text: qsTr("actions browse forecast")
                         property string coverType: "BrowseForecast"
                         Label {
                             visible: !parent.enabled
                             anchors.bottom: parent.bottom
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: qsTr("Enable forecasts to use")
+                            text: true ? qsTr("Not implemented yet") : qsTr("Enable forecasts to use")
                             font.pixelSize: Theme.fontSizeTiny
                             color: Theme.secondaryColor
                         }

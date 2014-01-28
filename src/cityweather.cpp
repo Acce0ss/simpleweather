@@ -1,10 +1,12 @@
+#include <QDateTime>
+
 #include "cityweather.h"
 #include "forecast.h"
 
 CityWeather::CityWeather(QObject *parent) :
-    QObject(parent), _current(new Forecast(this)),_days(),
+    QObject(parent), _current(new Forecast(this)),
     _days_objects(), _city(""),
-    _id(0), _detailsUrl("")
+    _id(0), _detailsUrl(""), _forecast_loadtime(QDateTime::fromTime_t(0))
 {
 }
 
@@ -33,28 +35,34 @@ QList<QObject *> CityWeather::forecastModel()
     return _days_objects;
 }
 
+QDateTime CityWeather::forecastLoadtime() const
+{
+    return _forecast_loadtime;
+}
+
 QObject *CityWeather::getForecastForDay(int day)
 {
-    if(!_days.empty() && (_days.size() > day) && (day >= 0))
+    if(!_days_objects.empty() && (_days_objects.size() > day) && (day >= 0))
     {
-        return dynamic_cast<QObject*>(this->_days[day]);
+        return this->_days_objects[day];
     }
 }
 
 void CityWeather::pushForecastDay(Forecast *forecast)
 {
-    this->_days.push_back(forecast);
     this->_days_objects.push_back(dynamic_cast<QObject*>(forecast));
+    emit forecastModelChanged();
 }
 
 void CityWeather::clearForecastData()
 {
-    int last_index = this->_days.size()-1;
+    int last_index = this->_days_objects.size()-1;
     for(int i = last_index; i >= 0; i--)
     {
-        this->_days[i]->deleteLater();
-        this->_days.pop_back();
+        dynamic_cast<Forecast*>(this->_days_objects[i])->deleteLater();
+        this->_days_objects.pop_back();
     }
+    emit forecastModelChanged();
 }
 
 void CityWeather::setCity(QString name)
@@ -82,6 +90,15 @@ void CityWeather::setCityId(int id)
     {
         this->_id = id;
         emit cityIdChanged();
+    }
+}
+
+void CityWeather::setForecastLoadtime(QDateTime date)
+{
+    if(this->_forecast_loadtime != date)
+    {
+        this->_forecast_loadtime = date;
+        emit forecastLoadtimeChanged();
     }
 }
 

@@ -1,4 +1,5 @@
 import QtQuick 2.0
+import Sailfish.Silica 1.0
 import harbour.simpleweather.WeatherInfo 1.0
 
 Settings {
@@ -41,12 +42,12 @@ Settings {
             weather.downloading = weather.queryWith(settings.currentCity, WeatherInfo.Search);
             settings.newCityAdded = true;
         }
-        else if(settings.currentCity != "")
+        else if(settings.currentCity !== "")
         {
 
             settings.allCities.forEach(function (el, i, array){
-                console.log(el + " " + i);
-                weather.addCity(el, settings.cityIds[i]);
+//                console.log(el + " " + i);
+                weather.addCityBack(el, settings.cityIds[i]);
             });
 
 
@@ -55,7 +56,6 @@ Settings {
                 settings.currentCity = settings.allCities[0];
             }
 
-            weather.locationSet = true;
             weather.refresh();
             weather.initialized = true;
         }
@@ -64,7 +64,15 @@ Settings {
             settings.coverType = "AddCity";
         }
 
+//        if(settings.coverType === "BrowseForecast")
+//        {
+//            settings.loadForecastOnStart = true;
+//        }
+
         settings.initialized = true;
+
+        app.useSummaryMode = settings.summaryOn;
+        app.resetPageStack();
     }
 
     property string coverType
@@ -81,17 +89,43 @@ Settings {
     property bool roundingOn
 
 
-    onCoverTypeChanged: writeSetting("coverType", settings.coverType)
+    onCoverTypeChanged: {
+
+        writeSetting("coverType", settings.coverType)
+//        if(settings.coverType === "BrowseForecast")
+//        {
+//            weather.loadForecast();
+//        }
+    }
     onCurrentCityChanged: writeSetting("currentCity", settings.currentCity)
     onTempUnitChanged: writeSetting("tempUnit", settings.tempUnit)
 
     onRefreshRateChanged: writeSetting("refreshRate", settings.refreshRate)
-    onForecastDaysChanged: writeSetting("forecastDays", settings.forecastDays)
+    onForecastDaysChanged: {
+
+        writeSetting("forecastDays", settings.forecastDays);
+        weather.resetForecastLoadtimes();
+    }
 
     onAutoRefreshOnChanged: writeSetting("autoRefreshOn", settings.autoRefreshOn)
     onHourlyForecastChanged: writeSetting("hourlyForecast", settings.hourlyForecast)
-    onForecastOnChanged: writeSetting("forecastOn", settings.forecastOn);
-    onSummaryOnChanged:  writeSetting("summaryOn", settings.forecastOn)
+    onForecastOnChanged: {
+
+        writeSetting("forecastOn", settings.forecastOn);
+        weather.resetForecastLoadtimes();
+    }
+    onSummaryOnChanged:  {
+        writeSetting("summaryOn", settings.summaryOn);
+
+        if(initialized)
+        {
+            summaryChangedRecently = true;
+        }
+    }
+
+    property int depthOnSettingsEntered
+    property bool summaryChangedRecently: false
+
     onRoundingOnChanged:  writeSetting("roundingOn", settings.roundingOn)
 
     property var allCities
@@ -109,6 +143,10 @@ Settings {
     property bool newCityAdded: false
     property bool initialized: false
 
+    property bool loadForecastOnStart: false
+
+    property int minLength: 1
+
     function permRemoveCity(index)
     {
         var temp = [];
@@ -124,7 +162,7 @@ Settings {
         if(name !== "Error")
         {
 
-            if(settings.currentCity === name && settings.allCities.length > 1)
+            if(settings.currentCity === name && settings.allCities.length > settings.minLength)
             {
                 if(settings.allCities.length - 1 === index)
                 {
@@ -146,6 +184,7 @@ Settings {
             }
 
             weather.removeCity(name);
+            weatherPage.updateCityPagerFromCover();
         }
     }
 
@@ -171,6 +210,9 @@ Settings {
         settings.cityIds = idTemp;
 
         weather.swapCities(toSwap, target);
+
+        settings.currentCity = toSwap;
+        weatherPage.updateCityPagerFromCover();
 
     }
 }

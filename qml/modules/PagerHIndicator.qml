@@ -11,7 +11,7 @@ Row{
     property int index: pager.indexNow
     property int indicatorRadius: 15
 
-    width: count*indicatorRadius*2
+ //   width: count*indicatorRadius*2
 
     Repeater {
 
@@ -22,11 +22,11 @@ Row{
 
         model: root.count
         delegate: GlassItem {
-            height: root.indicatorRadius*2
-            width: root.indicatorRadius*2
+            height: root.indicatorRadius
+            width: root.indicatorRadius
             property bool active: root.index === index
             dimmed: !(active)
-            falloffRadius:  active ? undefined : 0.075
+            falloffRadius:  active ? 0.25 : 0.15
             cache: false
 
             MouseArea {

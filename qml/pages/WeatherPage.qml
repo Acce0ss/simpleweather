@@ -7,6 +7,8 @@ import "../modules"
 Page {
     id: page
 
+    objectName: "WeatherPage"
+
     SilicaFlickable {
 
         id: root
@@ -15,46 +17,7 @@ Page {
 
         flickableDirection: Flickable.VerticalFlick
 
-        PullDownMenu {
-
-            MenuItem {
-                text: qsTr("Settings")
-                onClicked: {
-                    pageStack.push(Qt.resolvedUrl("SettingPage.qml"), {currentSettings: settings}, PageStackAction.Animated);
-
-                }
-
-
-
-            }
-
-            //            MenuItem {
-            //                text: qsTr("Search by GPS")
-            //                onClicked: {
-            //                    weather.searchByGPS();
-            //                }
-            //            }
-            MenuItem {
-                text: qsTr("Manage cities")
-                onClicked: {
-
-                    pageStack.push(Qt.resolvedUrl("ManagementPage.qml"), {currentSettings: settings});
-                }
-            }
-
-            MenuItem {
-                text: qsTr("Add a city")
-                onClicked: {
-                    pageStack.push(searchPageComponent);
-                }
-            }
-            MenuItem {
-                text: qsTr("Refresh")
-                onClicked: {
-                    weather.refresh();
-                }
-            }
-        }
+        MainMenu {}
 
         Column {
             id: content
@@ -107,7 +70,7 @@ Page {
 
                 interactive: (cityPager.count > 1)
 
-                placeholderText: qsTr("Add a city from the pulley menu")
+                placeholderText: settings.currentCity === "" ? qsTr("Add a city from the pulley menu") : ""
 
                 onIndexNowChanged: {
                     if(settings.currentCity !== settings.allCities[indexNow])
@@ -126,9 +89,9 @@ Page {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottomMargin: Theme.paddingMedium
 
-                height: page.height / 15
+                height: Theme.itemSizeMedium
 
-                indicatorRadius: height / 2
+                indicatorRadius: (Theme.itemSizeSmall / pager.count) * (pager.count > 3 ? 4 : 2)
 
                 visible: (cityPager.count > 1) && !weather.downloading
 
@@ -186,6 +149,11 @@ Page {
         cityPager.moveToPage(curInd);
     }
 
+    function setCityIndex(index)
+    {
+        cityPager.moveToPage(index);
+    }
+
     onStatusChanged: {
         if(status === PageStatus.Deactivating)
         {
@@ -194,16 +162,11 @@ Page {
         else if(status === PageStatus.Activating)
         {
 
-            updateCityPagerFromCover();
+
         }
         else if(status === PageStatus.Active)
         {
-            if(settings.forecastOn)
-            {
-                pageStack.pushAttached(Qt.resolvedUrl("ForecastPage.qml"),
-                                       {city: cityPager.itemNow, currentSettings: settings});
-            }
-
+            updateCityPagerFromCover();
         }
         else
         {

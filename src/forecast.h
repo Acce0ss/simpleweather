@@ -11,6 +11,8 @@ class Forecast : public QObject
 
     Q_PROPERTY(QDateTime dateTime READ date NOTIFY dateTimeChanged)
     Q_PROPERTY(QString temperature READ temperature NOTIFY temperatureChanged)
+    Q_PROPERTY(QString minimumTemperature READ minimumTemperature NOTIFY minimumTemperatureChanged)
+    Q_PROPERTY(QString maximumTemperature READ maximumTemperature NOTIFY maximumTemperatureChanged)
     Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
     Q_PROPERTY(QString humidity READ humidity NOTIFY humidityChanged)
     Q_PROPERTY(QString condition READ condition NOTIFY conditionChanged)
@@ -24,6 +26,8 @@ public:
     explicit Forecast(QObject *parent = 0);
 
     QString temperature() const;
+    QString minimumTemperature() const;
+    QString maximumTemperature() const;
     QString condition() const;
     QString humidity() const;
     QString icon() const;
@@ -35,6 +39,8 @@ public:
     QStringList weatherModel();
 
     void setTemperature(QString temperature);
+    void setMinimumTemperature(QString temperature);
+    void setMaximumTemperature(QString temperature);
     void setCondition(QString condition);
     void setHumidity(QString humidity);
     void setWind(QString wind);
@@ -45,6 +51,9 @@ public:
 
 signals:
     void temperatureChanged();
+    void minimumTemperatureChanged();
+    void maximumTemperatureChanged();
+
     void humidityChanged();
     void iconChanged();
     void conditionChanged();
@@ -61,6 +70,8 @@ public slots:
 private:
     QString _icon;
     QString _temperature;
+    QString _max_temperature;
+    QString _min_temperature;
     QString _condition;
     QString _wind;
     QString _wind_direction;

@@ -3,6 +3,7 @@
 
 Forecast::Forecast(QObject *parent) :
     QObject(parent), _icon(""),_temperature(""),
+    _max_temperature(""), _min_temperature(""),
     _humidity(""), _condition(""),_wind(""),
     _wind_direction(""), _gust(""), _date()
 {
@@ -11,6 +12,16 @@ Forecast::Forecast(QObject *parent) :
 QString Forecast::temperature() const
 {
     return this->_temperature;
+}
+
+QString Forecast::minimumTemperature() const
+{
+    return this->_min_temperature;
+}
+
+QString Forecast::maximumTemperature() const
+{
+    return this->_max_temperature;
 }
 
 QString Forecast::condition() const
@@ -59,11 +70,54 @@ QString Forecast::windDirection() const
 
 void Forecast::setTemperature(QString temperature)
 {
+    double temp = temperature.toDouble();
+    if(temp > 200)
+    {
+        temp = temp - 273.15;
+        temperature = QString::number(temp);
+    }
+
+
     if(this->_temperature != temperature)
     {
         this->_temperature = temperature;
         emit temperatureChanged();
     }
+}
+
+void Forecast::setMinimumTemperature(QString temperature)
+{
+    double temp = temperature.toDouble();
+    if(temp > 200)
+    {
+        temp = temp - 273.15;
+        temperature = QString::number(temp);
+    }
+
+
+    if(this->_min_temperature != temperature)
+    {
+        this->_min_temperature = temperature;
+        emit minimumTemperatureChanged();
+    }
+}
+
+void Forecast::setMaximumTemperature(QString temperature)
+{
+    double temp = temperature.toDouble();
+    if(temp > 200)
+    {
+        temp = temp - 273.15;
+        temperature = QString::number(temp);
+    }
+
+
+    if(this->_max_temperature != temperature)
+    {
+        this->_max_temperature = temperature;
+        emit maximumTemperatureChanged();
+    }
+
 }
 
 void Forecast::setCondition(QString condition)
