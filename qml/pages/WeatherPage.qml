@@ -39,6 +39,10 @@ Page {
 
                 model: weather.citiesModel
 
+                RemorseItem {
+                    id: remorse
+                }
+
                 delegate: Component {
                     WeatherDelegate {
                         height: cityPager.height
@@ -64,7 +68,7 @@ Page {
                 width: parent.width
                 height: parent.height-header.height-cityIndicator.height
 
-                startIndex: settings.allCities.indexOf(settings.currentCity)
+                startIndex: settings.currentIndex
 
                 visible: !weather.downloading
 
@@ -73,9 +77,9 @@ Page {
                 placeholderText: settings.currentCity === "" ? qsTr("Add a city from the pulley menu") : ""
 
                 onIndexNowChanged: {
-                    if(settings.currentCity !== settings.allCities[indexNow])
+                    if(settings.currentIndex !== indexNow)
                     {
-                        settings.currentCity = settings.allCities[indexNow];
+                        settings.currentIndex = indexNow;
                     }
                 }
 
@@ -144,9 +148,9 @@ Page {
 
     function updateCityPagerFromCover()
     {
-        var curInd = settings.allCities.indexOf(settings.currentCity);
-        cityPager.showPage(curInd);
-        cityPager.moveToPage(curInd);
+
+        cityPager.showPage(settings.currentIndex);
+        cityPager.moveToPage(settings.currentIndex);
     }
 
     function setCityIndex(index)

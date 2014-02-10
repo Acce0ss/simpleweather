@@ -34,7 +34,7 @@ ListItem {
             width: parent.width * 3 / 5
             height: parent.height
             text: root.name
-            color: Theme.highlightColor
+            color: Theme.primaryColor
         }
         WeatherLabel {
             height: parent.height
@@ -59,8 +59,9 @@ ListItem {
     }
 
     function remove(idx){
-        remorseAction(qsTr("Removing"), function (){
+        remorse.execute(root, qsTr("Removing"), function (){
             currentSettings.permRemoveCity(idx);
         });
     }
+
 }

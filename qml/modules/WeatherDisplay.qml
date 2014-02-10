@@ -47,7 +47,7 @@ Column {
         text: root.name
         wrapMode: Text.WordWrap
         font.pixelSize: weatherModel.fontSize
-
+        color: Theme.primaryColor
         visible: forecast
     }
 
@@ -56,6 +56,7 @@ Column {
         text: root.timePassed
         wrapMode: Text.WordWrap
         font.pixelSize: weatherModel.fontSize
+        color: Theme.primaryColor
         visible: forecast
     }
 

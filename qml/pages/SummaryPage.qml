@@ -33,6 +33,10 @@ Page {
             title: qsTr("Summary")
         }
 
+        ViewPlaceholder {
+            enabled: cityFlick.count === 0
+            text: settings.currentCity === "" ? qsTr("Add a city from the pulley menu") : ""
+        }
 
         MainMenu { }
 
@@ -50,6 +54,10 @@ Page {
         model: weather.citiesModel
 
         visible: !weather.downloading
+
+        RemorseItem {
+            id: remorse
+        }
 
         delegate: SummaryDelegate {
             id: cityDelegate

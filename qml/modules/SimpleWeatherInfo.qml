@@ -22,7 +22,7 @@ WeatherInfo {
             weather.lastLoadFailCount = weather.lastLoadFailCount + 1;
             if(weather.lastLoadFailCount >= 5 || weather.isSearch)
             {
-                console.log("vai tämä?");
+
                 if(!isServiceError)
                 {
                     showError(qsTr("Network error"), true);
@@ -52,14 +52,19 @@ WeatherInfo {
                 var idTmp = [];
                 idTmp = settings.cityIds;
 
-                idTmp.push(weather.getCity(tmp[tmp.length-1]).cityId);
+                idTmp.push(weather.getCityByIndex(tmp.length-1).cityId);
 
                 settings.cityIds = idTmp;
 
                 settings.newCityAdded = false;
+
+                var ind = tmp.length-1;
+                settings.currentIndex = -1;
+                settings.currentIndex = ind;
+
                 var city = settings.currentCity;
                 settings.currentCity = "placehold";
-                settings.currentCity = city;
+                settings.currentCity = tmp[ind];
             }
 
 //            if(settings.loadForecastOnStart)
@@ -112,9 +117,9 @@ WeatherInfo {
     }
 
 
-    function loadForecast() {
+    function loadForecast(index) {
 
-        var cityData = weather.getCity(settings.currentCity);
+        var cityData = weather.getCityByIndex(index);
 
         if(((cityData.forecastLoadtime.getTime() + settings.refreshRate) <= new Date().getTime()
             && !weather.downloading)
@@ -123,7 +128,7 @@ WeatherInfo {
             if(weather.locationSet)
             {
                 console.log(settings.currentCity);
-                weather.downloading = weather.queryWith(settings.currentCity, WeatherInfo.CurrentForecast);
+                weather.downloading = weather.queryWith(settings.cityIds[index], WeatherInfo.CurrentForecast);
             }
 
 

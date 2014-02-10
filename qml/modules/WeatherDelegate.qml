@@ -56,7 +56,7 @@ ListItem {
 
 
     function remove(idx){
-        remorseAction(qsTr("Removing"), function (){
+        remorse.execute(root, qsTr("Removing"), function (){
             settings.permRemoveCity(idx);
         });
     }
@@ -104,7 +104,7 @@ ListItem {
             onClicked:
             {
 
-                weather.loadForecast();
+                weather.loadForecast(index);
 
                 pageStack.push(Qt.resolvedUrl("../pages/ForecastPage.qml"),
                                        {city: root.cityData, currentSettings: settings,

@@ -24,6 +24,7 @@ Settings {
         settings.summaryOn = readSetting("summaryOn", false, Settings.Bool);
         settings.roundingOn = readSetting("roundingOn", true, Settings.Bool);
 
+        settings.currentIndex = readSetting("currentIndex", 0, Settings.Int);
         settings.refreshRate = readSetting("refreshRate", 1000*60*30, Settings.Int);
         settings.forecastDays = readSetting("forecastDays", 1, Settings.Int);
 
@@ -39,6 +40,7 @@ Settings {
             var temp = [];
             temp.push(settings.currentCity)
             settings.allCities = temp;
+            settings.currentIndex = 0;
             weather.downloading = weather.queryWith(settings.currentCity, WeatherInfo.Search);
             settings.newCityAdded = true;
         }
@@ -49,12 +51,6 @@ Settings {
 //                console.log(el + " " + i);
                 weather.addCityBack(el, settings.cityIds[i]);
             });
-
-
-            if(settings.currentCity === "")
-            {
-                settings.currentCity = settings.allCities[0];
-            }
 
             weather.refresh();
             weather.initialized = true;
@@ -81,6 +77,7 @@ Settings {
 
     property int refreshRate
     property int forecastDays
+    property string currentIndex
 
     property bool autoRefreshOn
     property bool hourlyForecast
@@ -105,6 +102,11 @@ Settings {
 
         writeSetting("forecastDays", settings.forecastDays);
         weather.resetForecastLoadtimes();
+    }
+    onCurrentIndexChanged: {
+
+        writeSetting("currentIndex", settings.currentIndex);
+        settings.currentCity = settings.allCities[settings.currentIndex];
     }
 
     onAutoRefreshOnChanged: writeSetting("autoRefreshOn", settings.autoRefreshOn)
@@ -145,8 +147,6 @@ Settings {
 
     property bool loadForecastOnStart: false
 
-    property int minLength: 1
-
     function permRemoveCity(index)
     {
         var temp = [];
@@ -161,29 +161,31 @@ Settings {
         var name = toRemove.length === 1 ? toRemove[0] : "Error";
         if(name !== "Error")
         {
+            weather.removeCity(index);
 
-            if(settings.currentCity === name && settings.allCities.length > settings.minLength)
+            if(settings.currentIndex === index && settings.allCities.length > 1)
             {
                 if(settings.allCities.length - 1 === index)
                 {
-                    settings.currentCity = settings.allCities[index-1];
+                    settings.currentIndex = index-1;
                 }
                 else if(settings.allCities.length - 1 > index)
                 {
-                    settings.currentCity = settings.allCities[index+1];
+                    settings.currentIndex = index+1;
                 }
             }
             else if(settings.allCities.length === 1 && settings.coverType === "BrowseCities")
             {
                 settings.coverType = "LastCity";
+                settings.currentIndex = 0;
             }
             else if(settings.allCities.length === 0)
             {
                 settings.currentCity = "";
+                settings.currentIndex = -1;
                 settings.coverType = "AddCity";
             }
 
-            weather.removeCity(name);
             weatherPage.updateCityPagerFromCover();
         }
     }
@@ -211,7 +213,7 @@ Settings {
 
         weather.swapCities(toSwap, target);
 
-        settings.currentCity = toSwap;
+        settings.currentIndex = targetIndex;
         weatherPage.updateCityPagerFromCover();
 
     }

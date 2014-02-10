@@ -54,13 +54,14 @@ public slots:
     void startSearch();
     void stopSearch();
     bool downloadData();
-    QObject* getCity(QString name);
+    QObject* getCityByName(QString name);
+    QObject* getCityByIndex(int index);
     bool queryWith(QString query, QueryType type);
     bool refreshCurrentWeather();
 
     void addCityBack(QString name, int id);
     void addCityFront(QString name, int id);
-    void removeCity(QString name);
+    void removeCity(int index);
     void swapCities(QString toSwap, QString target);
     void resetForecastLoadtimes();
 
@@ -78,7 +79,10 @@ private:
     void parseSearch(QJsonObject info);
     void parseCurrentWeather(QJsonObject info);
 
-    QObject * findCityByName(QString name, QList<QObject *> cities);
+    CityWeather* checkCityExistance(int id, QString name);
+
+    QObject * findCityByName(QString name);
+    QObject * findCityById(int id);
 
     QString degToDirection(int degree);
 

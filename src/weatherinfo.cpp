@@ -117,10 +117,15 @@ bool WeatherInfo::downloadData()
 
 }
 
-QObject* WeatherInfo::getCity(QString name)
+QObject* WeatherInfo::getCityByName(QString name)
 {
     //qDebug() << name << " " << _cities.size() << _city_indexes;
-    return this->findCityByName(name, _cities);
+    return this->findCityByName(name);
+}
+
+QObject *WeatherInfo::getCityByIndex(int index)
+{
+    return this->_cities.at(index);
 }
 
 bool WeatherInfo::queryWith(QString query, QueryType type)
@@ -189,21 +194,20 @@ void WeatherInfo::addCityFront(QString name, int id)
 
 }
 
-void WeatherInfo::removeCity(QString name)
+void WeatherInfo::removeCity(int index)
 {
-    if(_city_indexes.contains(name))
+    if(index >= 0 && index < _cities.size())
     {
-        int index = _city_indexes[name];
-        QObject* temp = _cities.at(index);
+        CityWeather* temp = dynamic_cast<CityWeather*>(_cities.at(index));
+        _city_indexes.remove(temp->city());
         _cities.removeAt(index);
-        _city_indexes.remove(name);
 
         for(int i = 0; i < _cities.size(); i++)
         {
             _city_indexes[dynamic_cast<CityWeather*>(_cities.at(i))->city()] = i;
         }
 
-        dynamic_cast<CityWeather*>(temp)->deleteLater();
+        temp->deleteLater();
         emit citiesModelChanged();
     }
 
@@ -261,7 +265,7 @@ void WeatherInfo::httpFinished()
 {
     m_latestData = reply->readAll();
 
-//    qDebug() << m_latestData;
+    qDebug() << m_latestData;
 
     bool isSuccess = false;
     bool isServiceError = false;
@@ -364,32 +368,12 @@ void WeatherInfo::parseForecast(QJsonObject info)
 
     int cityId = (int)cityObject["id"].toDouble();
 
-    qDebug() << city << _city_indexes;
-
-    CityWeather* temp_city;
-
-    if(this->_city_indexes.contains(city))
-    {
-        temp_city = dynamic_cast<CityWeather*>(this->_cities[_city_indexes[city]]);
-        temp_city->clearForecastData();
-    }
-    else
-    {
-        qDebug() << "luodahtaanko uusi kaupunki?";
-        temp_city = new CityWeather(this);
-        this->_cities.append( dynamic_cast<QObject*>(temp_city));
-        this->_city_indexes[city] = _cities.indexOf(dynamic_cast<QObject*>(temp_city));
-        temp_city->setCity(city);
-        temp_city->setCityId(cityId);
-        temp_city->setDetailsUrl(cityId);
-        emit citiesModelChanged();
-    }
+    CityWeather* temp_city = this->checkCityExistance(cityId, city);
 
     temp_city->setForecastLoadtime(QDateTime::currentDateTime());
+    temp_city->clearForecastData();
 
     QJsonArray days = info["list"].toArray();
-
-//    qDebug() << days.toVariantList();
 
     for(int i = 0; i < days.size(); i++)
     {
@@ -423,8 +407,6 @@ void WeatherInfo::parseForecast(QJsonObject info)
         temp_forecast->setWindDirection(this->degToDirection((int)weather["deg"].toDouble()));
         temp_forecast->setDate(QDateTime::fromTime_t((uint)weather["dt"].toDouble()));
 
-        qDebug() << temp_forecast->condition();
-
         temp_city->pushForecastDay(temp_forecast);
 
 
@@ -446,24 +428,7 @@ void WeatherInfo::parseSearch(QJsonObject info)
 
     int cityId = (int)info["id"].toDouble();
 
-    CityWeather* temp_city;
-
-    if(this->_city_indexes.contains(city))
-    {
-        temp_city = dynamic_cast<CityWeather*>(this->_cities[_city_indexes[city]]);
-        temp_city->clearForecastData();
-    }
-    else
-    {
-      //  qDebug() << "uusi kaupunki: " << city << " " << cityId;
-        temp_city = new CityWeather(this);
-        this->_cities.append( dynamic_cast<QObject*>(temp_city));
-        this->_city_indexes[city] = _cities.indexOf(dynamic_cast<QObject*>(temp_city));
-        temp_city->setCity(city);
-        temp_city->setCityId(cityId);
-        temp_city->setDetailsUrl(cityId);
-        emit citiesModelChanged();
-    }
+    CityWeather* temp_city = this->checkCityExistance(cityId, city);
 
     Forecast* current = dynamic_cast<Forecast*>(temp_city->currentWeather());
 
@@ -521,25 +486,9 @@ void WeatherInfo::parseCurrentWeather(QJsonObject info)
 
         name = name.append(", ").append(country);
 
-        int cityId = (int)info["id"].toDouble();
+        int cityId = (int)city["id"].toDouble();
 
-        CityWeather* temp_city;
-
-        if(this->_city_indexes.contains(name))
-        {
-            temp_city = dynamic_cast<CityWeather*>(this->_cities[_city_indexes[name]]);
-            temp_city->clearForecastData();
-        }
-        else
-        {
-            temp_city = new CityWeather(this);
-            this->_cities.append( dynamic_cast<QObject*>(temp_city));
-            this->_city_indexes[name] = _cities.indexOf(dynamic_cast<QObject*>(temp_city));
-            temp_city->setCity(name);
-            temp_city->setCityId(cityId);
-            temp_city->setDetailsUrl(cityId);
-            emit citiesModelChanged();
-        }
+        CityWeather* temp_city = this->checkCityExistance(cityId, name);
 
         Forecast* current = dynamic_cast<Forecast*>(temp_city->currentWeather());
 
@@ -579,14 +528,49 @@ void WeatherInfo::parseCurrentWeather(QJsonObject info)
     }
 }
 
-QObject *WeatherInfo::findCityByName(QString name, QList<QObject *> cities)
+CityWeather *WeatherInfo::checkCityExistance(int id, QString name)
 {
-    for(int i = 0; i < cities.size(); i++)
+    CityWeather* temp_city;
+
+    temp_city = dynamic_cast<CityWeather*>(this->findCityById(id));
+
+    if(temp_city == NULL)
     {
-        CityWeather* current = dynamic_cast<CityWeather*>(cities.at(i));
+        temp_city = new CityWeather(this);
+        QObject* temp_obj = dynamic_cast<QObject*>(temp_city);
+        this->_cities.append( temp_obj);
+
+        this->_city_indexes[name] = _cities.size()-1;
+        temp_city->setCity(name);
+        temp_city->setCityId(id);
+        temp_city->setDetailsUrl(id);
+        emit citiesModelChanged();
+    }
+    return temp_city;
+}
+
+QObject *WeatherInfo::findCityByName(QString name)
+{
+    for(int i = 0; i < _cities.size(); i++)
+    {
+        CityWeather* current = dynamic_cast<CityWeather*>(_cities.at(i));
         if(current->city() == name)
         {
-            return cities.at(i);
+            return _cities.at(i);
+        }
+    }
+
+    return NULL;
+}
+
+QObject *WeatherInfo::findCityById(int id)
+{
+    for(int i = 0; i < _cities.size(); i++)
+    {
+        CityWeather* current = dynamic_cast<CityWeather*>(_cities.at(i));
+        if(current->cityId() == id)
+        {
+            return _cities.at(i);
         }
     }
 
@@ -690,7 +674,7 @@ void WeatherInfo::buildUrl()
         lang.append(langCode);
         break;
     case WeatherInfo::CurrentForecast:
-        qType = "forecast/daily?q=";
+        qType = "forecast/daily?id=";
         lang = "&lang=";
         lang.append(langCode);
         count = "&cnt=";

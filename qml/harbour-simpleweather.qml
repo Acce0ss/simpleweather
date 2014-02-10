@@ -146,11 +146,15 @@ ApplicationWindow
                     var tmp = settings.allCities;
                     tmp.push(selection);
                     settings.allCities = tmp;
+
+                    settings.currentIndex = tmp.length-1;
                     var idTmp = settings.cityIds;
-                    idTmp.push(weather.getCity(selection).cityId);
+                    idTmp.push(weather.getCityByIndex(tmp.length-1).cityId);
                     settings.cityIds = idTmp;
 
                     settings.storeSettings();
+
+                    weather.clearSearchlist();
 
                 }
             }

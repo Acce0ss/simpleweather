@@ -16,7 +16,7 @@ CoverBackground {
         }
     }
 
-    property QtObject currentCityObject: weather.getCity(settings.currentCity)
+    property QtObject currentCityObject: weather.getCityByIndex(settings.currentIndex)
 
     CoverWeatherDisplay {
         id: coverWeather
@@ -47,11 +47,11 @@ CoverBackground {
 
 //        forecast: settings.currentCity === "" ? null :
 //                                                settings.coverType === "BrowseForecast" ?
-//                                                    weather.getCity(settings.currentCity).forecastModel[coverIndex]
+//                                                    weather.getCityByName(settings.currentCity).forecastModel[coverIndex]
 //                                                        : null
 //        currentSettings: settings
 
-//        name: settings.currentCity === "" ? "" : weather.getCity(settings.currentCity).name
+//        name: settings.currentCity === "" ? "" : weather.getCityByName(settings.currentCity).name
 //        isCover: true
 //        visible: !weather.downloading && settings.allCities.length !== 0 && settings.coverType === "BrowseForecast"
 //        z:1
@@ -78,13 +78,13 @@ CoverBackground {
         z:10
     }
 
-    property int coverIndex: settings.allCities.indexOf(settings.currentCity)
+    property int coverIndex: settings.currentIndex
 
 
     function moveLeft(){
         if(coverIndex > 0)
         {
-            settings.currentCity = settings.allCities[coverIndex-1];
+            settings.currentIndex = coverIndex-1;
         }
     }
 
@@ -94,7 +94,7 @@ CoverBackground {
         if(coverIndex < settings.allCities.length)
         {
 
-            settings.currentCity = settings.allCities[coverIndex+1];
+            settings.currentIndex = coverIndex+1;
         }
     }
 
